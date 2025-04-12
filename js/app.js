@@ -1,72 +1,33 @@
-// js/app.js
+// app.js
+const svg = document.getElementById('color-wheel');
+const result = document.getElementById('result');
+let baseColor = '#ff0000'; // Cor inicial
 
-// Seletores principais
-const btnCreatePalette = document.getElementById('btn-create-palette');
-const btnSavePalette = document.getElementById('btn-save-palette');
-const paletteContainer = document.getElementById('palette-container');
-const librarySection = document.getElementById('library');
-const savedPalettesDiv = document.getElementById('saved-palettes');
-
-// Função para criar cores aleatórias
-function generateRandomColor() {
-  const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-  return randomColor;
+// Desenhar a roda de cores
+function drawColorWheel() {
+    const radius = 50;
+    const center = 50;
+    for (let i = 0; i < 360; i++) {
+        const angle = (i * Math.PI) / 180;
+        const x1 = center + radius * Math.cos(angle);
+        const y1 = center + radius * Math.sin(angle);
+        const x2 = center + (radius - 5) * Math.cos(angle);
+        const y2 = center + (radius - 5) * Math.sin(angle);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M${center},${center} L${x1},${y1} A${radius},${radius} 0 0,1 ${x2},${y2} Z`);
+        path.setAttribute('fill', `hsl(${i}, 100%, 50%)`);
+        svg.appendChild(path);
+    }
 }
 
-// Função para criar uma nova paleta
-function createPalette() {
-  paletteContainer.innerHTML = ''; // Limpar paleta existente
-  for (let i = 0; i < 5; i++) {
-    const color = generateRandomColor();
-    const colorBox = document.createElement('div');
-    colorBox.className = 'color-box';
-    colorBox.style.backgroundColor = color;
-    colorBox.innerHTML = `
-      <span>${color}</span>
-      <span class="copy-icon" onclick="copyToClipboard('${color}')">📋</span>
-    `;
-    paletteContainer.appendChild(colorBox);
-  }
-}
+// Selecionar cor
+svg.addEventListener('click', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left - 50;
+    const y = e.clientY - rect.top - 50;
+    const angle = Math.atan2(y, x) * (180 / Math.PI) + 180;
+    baseColor = chroma.hsl(angle, 1, 0.5).hex();
+    updateResult();
+});
 
-// Função para salvar a paleta
-function savePalette() {
-  const palette = Array.from(paletteContainer.children).map(box => box.style.backgroundColor);
-  const paletteName = prompt('Digite um nome para a paleta:');
-  if (paletteName) {
-    const savedPalettes = JSON.parse(localStorage.getItem('palettes') || '[]');
-    savedPalettes.push({ name: paletteName, colors: palette });
-    localStorage.setItem('palettes', JSON.stringify(savedPalettes));
-    alert('Paleta salva com sucesso!');
-    loadPalettes();
-  }
-}
-
-// Função para carregar paletas da biblioteca
-function loadPalettes() {
-  savedPalettesDiv.innerHTML = '';
-  const savedPalettes = JSON.parse(localStorage.getItem('palettes') || '[]');
-  savedPalettes.forEach(palette => {
-    const paletteDiv = document.createElement('div');
-    paletteDiv.className = 'palette';
-    paletteDiv.innerHTML = `
-      <h3>${palette.name}</h3>
-      <div>${palette.colors.map(color => `<span class="color-box" style="background-color: ${color};"></span>`).join('')}</div>
-    `;
-    savedPalettesDiv.appendChild(paletteDiv);
-  });
-}
-
-// Função para copiar cor para a área de transferência
-function copyToClipboard(color) {
-  navigator.clipboard.writeText(color).then(() => {
-    alert(`Cor ${color} copiada para a área de transferência!`);
-  });
-}
-
-// Event Listeners
-btnCreatePalette.addEventListener('click', createPalette);
-btnSavePalette.addEventListener('click', savePalette);
-
-// Inicializar biblioteca
-loadPalettes();
+drawColorWheel();
